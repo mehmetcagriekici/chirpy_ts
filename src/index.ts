@@ -4,7 +4,11 @@ import { Request, Response, NextFunction } from "express";
 import { middlewareLogResponses } from "./api/middleware_log_responses.js";
 import { middlewareMetricsInc } from "./api/middleware_file_server_hits.js";
 
-import { apiConfig } from "./config.js";
+import { config } from "./config.js";
+
+import { createUser, deleteUsers } from "./lib/db/queries/users.js";
+import { createChirp, getChirps } from "./lib/db/queries/chirps.js";
+
 
 const app = express();
 const PORT = 8080;
@@ -15,12 +19,15 @@ app.use(middlewareLogResponses);
 
 app.get("/api/healthz", handlerReadiness);
 app.get("/admin/metrics", handlerLogMetrics);
+app.get("/api/chirps", handlerGetChirps);
 
 app.post("/admin/reset", handlerResetMetrics);
 // app.post("/api/validate_chirp", (req: Request, res: Response) => {
 //  res.end();
 // });
-app.post("/api/validate_chirp", handlerValidateChirp);
+// app.post("/api/validate_chirp", handlerValidateChirp);
+app.post("/api/users", handlerCreateUser);
+app.post("/api/chirps", handlerCreateChirp);
 
 app.use(errorHandler);
 
@@ -29,6 +36,12 @@ app.listen(PORT, () => {
 });
 
 class ChirpIsTooLongError extends Error {
+  constructor(message: string) {
+    super(message);
+  }
+}
+
+class PlatfromForbiddenError extends Error {
   constructor(message: string) {
     super(message);
   }
@@ -44,15 +57,78 @@ function errorHandler(
   if (err instanceof ChirpIsTooLongError) {
     res.status(400).json({
       error: err.message,
-    })
-  }
-  else {
+    });
+  } else if (err instanceof PlatfromForbiddenError) {
+    res.status(403).json({
+      error: err.message,
+    });
+  } else {
     res.status(500).json({
       error: "Something went wrong on our end",
     });
   }
 }
 
+async function handlerGetChirps(req: Request, res: Response, next: NextFunction) {
+  try {      
+      const chirps = await getChirps();
+      res.status(200).send(JSON.stringify(chirps));
+    } catch(err) {
+      next(err);
+    }
+}
+
+async function handlerCreateChirp(req: Request, res: Response, next: NextFunction) {
+  try {
+    let body = "";
+    req.on("data", (chunk) => {
+      body += chunk
+    });
+
+    req.on("end", async () => {
+      const parsed = JSON.parse(body);
+      if (!("body" in parsed) || !("userId" in parsed)) {
+	throw new Error("Invalid JSON. Request requires body and userID");
+      }
+      
+     if (parsed.body.length > 140) {
+	throw new ChirpIsTooLongError("Chirp is too long. Max length is 140");
+     }
+
+      const profane = {kerfuffle: "****", sharbert: "****", fornax: "****"};
+      const arr = parsed.body.split(" ") as string[];
+      const cleanedBody = arr.reduce((acc, word) => word.toLowerCase() in profane ? `${acc} ****` : `${acc} ${word}`, "").trim();
+
+      const chirp = await createChirp(cleanedBody, parsed.userId);
+      res.status(201).send(JSON.stringify(chirp));
+    });
+  } catch(err) {
+    next(err);
+  }
+}
+
+async function handlerCreateUser(req: Request, res: Response, next: NextFunction) {
+  try {
+    let body = "";
+    req.on("data", (chunk) => {
+      body += chunk;
+    });
+
+    req.on("end", async () => {
+      const parsed = JSON.parse(body);
+      if (!("email" in parsed)) {
+	throw new Error("Invalid request. Request must own an email field.");
+      }
+
+      const createdUser = await createUser(parsed.email);
+      res.status(201).send(JSON.stringify(createdUser));
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/*
 function handlerValidateChirp(req: Request, res: Response, next: NextFunction) {
   let body = "";
 
@@ -91,7 +167,7 @@ function handlerValidateChirp(req: Request, res: Response, next: NextFunction) {
     }
   });
 }
-
+*/
 
 function handlerReadiness(req: Request, res: Response) {
   res.set({
@@ -110,18 +186,19 @@ function handlerLogMetrics(req: Request, res: Response) {
 <html>
 <body>
 <h1>Welcome, Chirpy Admin</h1>
-<p>Chirpy has been visited ${apiConfig.fileserverHits} times!</p>
+<p>Chirpy has been visited ${config.api.fileserverHits} times!</p>
 </body>
 </html>
 `);
 }
 
-function handlerResetMetrics(req: Request, res: Response) {
-  apiConfig.fileserverHits = 0;
+async function handlerResetMetrics(req: Request, res: Response) {
+  config.api.fileserverHits = 0;
+  await deleteUsers();
 
   res.set({
     "Content-Type": "text/plain; charset=utf-8"
   });
 
-  res.send(`Hits: ${apiConfig.fileserverHits}`); 
+  res.send(`Hits: ${config.api.fileserverHits}`); 
 }

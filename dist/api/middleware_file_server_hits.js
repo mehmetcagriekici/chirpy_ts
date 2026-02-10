@@ -1,5 +1,5 @@
-import { apiConfig } from "../config.js";
+import { config } from "../config.js";
 export const middlewareMetricsInc = function (req, res, next) {
-    apiConfig.fileserverHits++;
+    config.api.fileserverHits++;
     next();
 };
