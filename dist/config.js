@@ -5,7 +5,8 @@ const migrationConfig = {
 };
 const apiConfig = {
     fileserverHits: 0,
-    platform: getEnv("PLATFORM")
+    platform: getEnv("PLATFORM"),
+    secret: getEnv("AUTH_SECRET")
 };
 const dbConfig = {
     dbURL: getEnv("DB_URL"),

@@ -11,6 +11,7 @@ const migrationConfig: MigrationConfig = {
 type APIConfig = {
   fileserverHits: number;
   platform: string;
+  secret: string;
 };
 
 type DBConfig = {
@@ -25,7 +26,8 @@ type Config = {
 
 const apiConfig: APIConfig = {
   fileserverHits: 0,
-  platform: getEnv("PLATFORM")
+  platform: getEnv("PLATFORM"),
+  secret: getEnv("AUTH_SECRET")
 }
 
 const dbConfig: DBConfig = {
