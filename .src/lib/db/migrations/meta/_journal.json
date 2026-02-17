@@ -29,6 +29,27 @@
       "when": 1770978334589,
       "tag": "0003_dashing_jimmy_woo",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1771308746900,
+      "tag": "0004_living_fantastic_four",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1771309622890,
+      "tag": "0005_tiny_rumiko_fujikawa",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1771309701686,
+      "tag": "0006_fresh_lorna_dane",
+      "breakpoints": true
     }
   ]
 }

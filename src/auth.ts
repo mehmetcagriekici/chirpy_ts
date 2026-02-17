@@ -46,6 +46,15 @@ export function getBearerToken(req: Request): string {
   return token.split(" ")[1] || "";
 }
 
+export function getAPIKey(req: Request): string {
+  const apiKey = req.get("Authorization");
+  if (!apiKey) {
+    return "";
+  }
+
+  return apiKey.split(" ")[1] || "";
+}
+
 export function makeRefreshToken() {
   const buf = randomBytes(256);
   return buf.toString("hex");

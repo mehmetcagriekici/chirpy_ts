@@ -16,6 +16,11 @@ export async function updateUser(newEmail: string, newPassword: string, userId: 
   return res;
 }
 
+export async function upgradeUserRed(userId: string) {
+  const [res] = await db.update(users).set({isChirpyRed: true}).where(eq(users.id, userId));
+  return res;
+}
+
 export async function getUserById(id: string) {
   const [res] = await db.select().from(users).where(eq(users.id, id));
   return res;
